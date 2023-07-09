@@ -48,6 +48,12 @@ class Project(db.Model):
         db.session.commit()
         return self
 
+    def touch(self):
+        if self.id is not None:
+            self.updated_at = datetime.now()
+            db.session.commit()
+        return self
+
 
 # Projects Schema
 class ProjectSchema(ma.Schema):
@@ -169,6 +175,8 @@ def get_tasks(project_id):
 @app.route('/projects/<project_id>/tasks', methods=['POST'])
 def add_task(project_id):
 
+    project = db.get_or_404(Project, project_id)
+
     name = request.json['name']
     summary = request.json['summary']
     status = request.json['status']
@@ -178,13 +186,16 @@ def add_task(project_id):
     new_task.project_id = project_id
 
     Task.create(new_task)
+    project.touch()
+
     return task_schema.jsonify(new_task)
 
 
 # update task
 @app.route('/projects/<project_id>/tasks/<id>', methods=['PUT'])
-def update_task(_project_id, id):
+def update_task(project_id, id):
 
+    project = db.get_or_404(Project, project_id)
     task = db.get_or_404(Task, id)
 
     if 'name' in request.json:
@@ -200,6 +211,7 @@ def update_task(_project_id, id):
         task.priority = request.json['priority']
 
     db.session.commit()
+    project.touch()
 
     return task_schema.jsonify(task)
 
