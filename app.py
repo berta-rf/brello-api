@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 from flask import Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_marshmallow import Marshmallow
+from flask_cors import cross_origin
 
 
 from sqlalchemy.sql import func
@@ -37,10 +38,8 @@ class Project(db.Model):
     def __repr__(self):
         return f'<Project {self.name}>'
 
-    def __init__(self, name, description, due_date):
+    def __init__(self, name):
         self.name = name
-        self.description = description
-        self.due_date = due_date
 
     def create(self):
         self.updated_at = datetime.now()
@@ -70,6 +69,7 @@ projects_schema = ProjectSchema(many=True)
 
 # get all projects
 @app.route('/projects')
+@cross_origin()
 def get_projects():
     all_projects = db.session.execute(db.select(Project)).scalars()
     result = projects_schema.dump(all_projects)
@@ -78,6 +78,7 @@ def get_projects():
 
 # get one project
 @app.route('/projects/<id>')
+@cross_origin()
 def get_project(id):
     project = db.get_or_404(Project, id)
     return project_schema.jsonify(project)
@@ -85,12 +86,13 @@ def get_project(id):
 
 # create new project
 @app.route('/projects', methods=['POST'])
+@cross_origin()
 def add_project():
     name = request.json['name']
-    description = request.json['description']
-    due_date = request.json['due_date']
+    # description = request.json['description']
+    # due_date = request.json['due_date']
 
-    new_project = Project(name, description, due_date)
+    new_project = Project(name)
 
     Project.create(new_project)
     return project_schema.jsonify(new_project)
@@ -98,6 +100,7 @@ def add_project():
 
 # update project
 @app.route('/projects/<id>', methods=['PUT'])
+@cross_origin()
 def update_project(id):
     project = db.get_or_404(Project, id)
 
@@ -117,6 +120,7 @@ def update_project(id):
 
 # delete project
 @app.route('/projects/<id>', methods=['DELETE'])
+@cross_origin()
 def delete_project(id):
     project = db.get_or_404(Project, id)
     db.session.delete(project)
@@ -165,6 +169,7 @@ tasks_schema = TaskSchema(many=True)
 
 # get all tasks for a project
 @app.route('/projects/<project_id>/tasks')
+@cross_origin()
 def get_tasks(project_id):
     all_tasks = db.session.execute(db.select(Task).where(Task.project_id == project_id)).scalars()
     result = tasks_schema.dump(all_tasks)
@@ -173,6 +178,7 @@ def get_tasks(project_id):
 
 # create new task
 @app.route('/projects/<project_id>/tasks', methods=['POST'])
+@cross_origin()
 def add_task(project_id):
 
     project = db.get_or_404(Project, project_id)
@@ -193,6 +199,7 @@ def add_task(project_id):
 
 # update task
 @app.route('/projects/<project_id>/tasks/<id>', methods=['PUT'])
+@cross_origin()
 def update_task(project_id, id):
 
     project = db.get_or_404(Project, project_id)
@@ -218,6 +225,7 @@ def update_task(project_id, id):
 
 # delete task
 @app.route('/projects/<project_id>/tasks/<id>', methods=['DELETE'])
+@cross_origin()
 def delete_task(project_id, id):
     task = db.get_or_404(Task, id)
     db.session.delete(task)
